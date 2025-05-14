@@ -1,0 +1,5 @@
+John Doe
+Email: john.doe@example.com
+Phone: (123) 456-7890
+Skills: Python, Java, SQL.
+Experience in data analysis.
