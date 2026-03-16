@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "AI Resume Tailor",
+  "version": "1.0",
+  "description": "Tailor your resume to a job description using AI.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[left=0.5in, right=0.5in, top=0.5in, bottom=0.5in]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+
+% Formatting sections
+\titleformat{\section}{\large\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+% Formatting lists
+\setlist[itemize]{noitemsep, topsep=0pt, leftmargin=1.5em}
+
+\begin{document}
+
+% HEADER
+\begin{center}
+    {\Huge \textbf{INSERT_NAME_HERE}} \\ \vspace{2mm}
+    INSERT_PHONE | \href{mailto:INSERT_EMAIL}{INSERT_EMAIL} | \href{INSERT_LINKEDIN_URL}{LinkedIn} | \href{INSERT_GITHUB_URL}{GitHub}
+\end{center}
+
+% SUMMARY
+\section*{Professional Summary}
+INSERT_OPTIMIZED_SUMMARY_HERE
+
+% SKILLS
+\section*{Technical Skills}
+\begin{itemize}
+    \item \textbf{Languages:} INSERT_LANGUAGES
+    \item \textbf{Frameworks \& Libraries:} INSERT_FRAMEWORKS
+    \item \textbf{Tools \& Platforms:} INSERT_TOOLS
+    \item \textbf{Databases:} INSERT_DATABASES
+\end{itemize}
+
+% EXPERIENCE
+\section*{Experience}
+% REPEAT THIS BLOCK FOR EACH JOB
+\noindent \textbf{INSERT_COMPANY} \hfill INSERT_LOCATION \\
+\textit{INSERT_ROLE} \hfill INSERT_DATES
+\begin{itemize}
+    \item INSERT_BULLET_POINT_1 (Quantified Result)
+    \item INSERT_BULLET_POINT_2 (Quantified Result)
+    \item INSERT_BULLET_POINT_3
+\end{itemize}
+
+% PROJECTS
+\section*{Projects}
+% REPEAT THIS BLOCK FOR EACH PROJECT
+\noindent \textbf{INSERT_PROJECT_NAME} | \textit{INSERT_TECH_STACK} \hfill \href{INSERT_PROJECT_LINK}{Link}
+\begin{itemize}
+    \item INSERT_PROJECT_BULLET_1
+    \item INSERT_PROJECT_BULLET_2
+\end{itemize}
+
+% EDUCATION
+\section*{Education}
+\noindent \textbf{INSERT_UNIVERSITY} \hfill INSERT_GRAD_YEAR \\
+INSERT_DEGREE \hfill GPA: INSERT_GPA
+
+\end{document}
