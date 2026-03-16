@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Resume Tailor</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      width: 400px;
+      padding: 10px;
+    }
+    h1 {
+      font-size: 18px;
+      margin-top: 0;
+    }
+    textarea {
+      width: 95%;
+      min-height: 150px;
+      margin-bottom: 10px;
+    }
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Resume Tailor</h1>
+  <form id="tailor-form">
+    <div class="form-group">
+      <label for="api-key">Google Gemini API Key</label>
+      <input type="password" id="api-key" required>
+    </div>
+    <div class="form-group">
+      <label for="resume-file">Upload Resume (PDF)</label>
+      <input type="file" id="resume-file" accept=".pdf" required>
+    </div>
+    <div class="form-group">
+      <label for="jd-text">Job Description</label>
+      <textarea id="jd-text" placeholder="Paste the job description here, or it will be auto-filled from the page."></textarea>
+    </div>
+    <button type="submit" id="submit-button">Tailor My Resume</button>
+  </form>
+  <div id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
