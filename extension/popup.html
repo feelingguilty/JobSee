@@ -56,7 +56,10 @@
     </div>
     <div class="form-group">
       <label for="resume-file">Upload Resume (PDF)</label>
-      <input type="file" id="resume-file" accept=".pdf" required>
+      <input type="file" id="resume-file" accept=".pdf">
+      <div id="saved-resume-info" style="display:none; color: green; font-size: 0.9em; margin-top: 5px;">
+        ✅ Using saved resume. <a href="#" id="clear-resume">Clear</a>
+      </div>
     </div>
     <div class="form-group">
       <label for="jd-text">Job Description</label>
