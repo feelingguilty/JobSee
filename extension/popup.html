@@ -1,73 +1,315 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>AI Resume Tailor</title>
+  <meta charset="UTF-8">
+  <title>JobSee - AI Resume Tailor</title>
   <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #22c55e;
+      --error: #ef4444;
+      --accent: #8b5cf6;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      width: 400px;
-      padding: 10px;
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      width: 420px;
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
     }
+
+    .container {
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
     h1 {
-      font-size: 18px;
-      margin-top: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    textarea {
-      width: 95%;
-      min-height: 150px;
-      margin-bottom: 10px;
+
+    /* Views */
+    .view {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
     }
-    input[type="file"] {
-      margin-bottom: 10px;
+
+    .view.active {
+      display: block;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      margin-bottom: 16px;
+    }
+
     .form-group {
-      margin-bottom: 10px;
+      margin-bottom: 16px;
     }
+
     label {
       display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-muted);
     }
-    button {
+
+    input, textarea {
       width: 100%;
       padding: 10px;
-      background-color: #007bff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      box-sizing: border-box;
+      transition: all 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary);
       color: white;
       border: none;
+      border-radius: 8px;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 16px;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    button:disabled {
-      background-color: #aaa;
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:disabled {
+      background-color: var(--border);
       cursor: not-allowed;
     }
-    #status {
-      margin-top: 10px;
-      font-weight: bold;
+
+    /* Status Bar */
+    #error-bar {
+      margin-top: 16px;
+      font-size: 0.875rem;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(239, 68, 68, 0.2);
     }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Insights View */
+    .insight-section {
+      margin-top: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .analysis-text {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+
+    /* File Input Styling */
+    .file-input-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .file-input-btn {
+        border: 2px dashed var(--border);
+        padding: 20px;
+        text-align: center;
+        border-radius: 12px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 8px;
+    }
+
+    .file-input-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .saved-resume-badge {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--success);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        margin-top: 8px;
+    }
+
+    .clear-link {
+        color: var(--error);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
   </style>
 </head>
 <body>
-  <h1>AI Resume Tailor</h1>
-  <form id="tailor-form">
-    <div class="form-group">
-      <label for="api-key">Google Gemini API Key</label>
-      <input type="password" id="api-key" required>
+  <div class="container">
+    <div class="header">
+      <div class="logo">J</div>
+      <h1>JobSee AI</h1>
     </div>
-    <div class="form-group">
-      <label for="resume-file">Upload Resume (PDF)</label>
-      <input type="file" id="resume-file" accept=".pdf">
-      <div id="saved-resume-info" style="display:none; color: green; font-size: 0.9em; margin-top: 5px;">
-        ✅ Using saved resume. <a href="#" id="clear-resume">Clear</a>
+
+    <!-- View 1: Setup -->
+    <div id="setup-view" class="view active">
+      <form id="tailor-form">
+        <div class="form-group">
+          <label for="api-key">Gemini API Key</label>
+          <input type="password" id="api-key" placeholder="Paste your API key here..." required>
+        </div>
+
+        <div class="form-group">
+          <label>Your Resume (PDF)</label>
+          <div id="file-drop-card" class="file-input-btn">
+            <span>Click or drag to upload resume</span>
+            <input type="file" id="resume-file" accept=".pdf" style="display: none;">
+          </div>
+          <div id="resume-status"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="jd-text">Job Description</label>
+          <textarea id="jd-text" placeholder="Scanning page for JD..."></textarea>
+        </div>
+
+        <button type="submit" id="submit-button" class="btn">
+          <span>Tailor Resume</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- View 2: Analyzing -->
+    <div id="analyzing-view" class="view">
+      <div class="card" style="text-align: center; padding: 40px 20px;">
+        <div class="pulse" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
+        <h2 style="margin: 0 0 10px 0;">AI is Thinking...</h2>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Analyzing your resume against the job requirements.</p>
+        <div id="status-text" style="font-size: 0.8125rem; font-weight: 600; margin-top: 20px;">Extracting content...</div>
       </div>
     </div>
-    <div class="form-group">
-      <label for="jd-text">Job Description</label>
-      <textarea id="jd-text" placeholder="Paste the job description here, or it will be auto-filled from the page."></textarea>
+
+    <!-- View 3: Insights -->
+    <div id="insights-view" class="view">
+      <div class="card">
+        <h3>✨ Optimization Insights</h3>
+        <div id="analysis-content" class="analysis-text">
+            <!-- AI Insights go here -->
+        </div>
+      </div>
+      <button id="download-button" class="btn" style="background: var(--success);">
+        <span>Download Optimized PDF</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      </button>
+      <button id="restart-button" class="btn" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border); margin-top: 8px;">
+        Start Over
+      </button>
     </div>
-    <button type="submit" id="submit-button">Tailor My Resume</button>
-  </form>
-  <div id="status"></div>
+
+    <div id="error-bar" class="status-bar" style="display:none; color: var(--error);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="error-text"></span>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>

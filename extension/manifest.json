@@ -6,13 +6,20 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "sidePanel"
   ],
   "host_permissions": [
     "http://127.0.0.1:8000/"
   ],
   "action": {
-    "default_popup": "popup.html"
+    "default_title": "Open JobSee Side Panel"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {

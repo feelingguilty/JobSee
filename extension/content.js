@@ -1,12 +1,28 @@
-// This script runs on the page and listens for a request from the popup.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === "get_jd") {
-    // A very simple heuristic to get the job description: return all visible text on the page.
-    // The user can then edit it in the popup.
-    // More advanced versions could look for specific DOM elements.
-    const pageText = document.body.innerText;
-    sendResponse({ jd: pageText });
+    // Try to find the job description container in common platforms
+    const jdSelectors = [
+      '.jobs-description__container', // LinkedIn
+      '#jobDescriptionText',         // Indeed
+      '.jobDescriptionContent',       // Glassdoor
+      '.description',                 // Generic
+      '[id*="job-description"]',      // ID containing job-description
+      '[class*="job-description"]'    // Class containing job-description
+    ];
+
+    let jd = null;
+    for (const selector of jdSelectors) {
+      const el = document.querySelector(selector);
+      if (el && el.innerText.trim().length > 100) {
+        jd = el.innerText;
+        break;
+      }
+    }
+
+    // Fallback to body text or selection
+    jd = jd || window.getSelection().toString() || document.body.innerText;
+    
+    sendResponse({ jd: jd.trim() });
   }
-  // Return true to indicate that the response will be sent asynchronously.
   return true;
 });

@@ -1,15 +1,53 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // UI Elements
+  const setupView = document.getElementById('setup-view');
+  const analyzingView = document.getElementById('analyzing-view');
+  const insightsView = document.getElementById('insights-view');
+  const statusText = document.getElementById('status-text');
+  const analysisContent = document.getElementById('analysis-content');
+  const errorBar = document.getElementById('error-bar');
+  const errorText = document.getElementById('error-text');
+
   const form = document.getElementById('tailor-form');
   const apiKeyInput = document.getElementById('api-key');
   const resumeFileInput = document.getElementById('resume-file');
+  const fileDropCard = document.getElementById('file-drop-card');
+  const resumeStatus = document.getElementById('resume-status');
   const jdTextInput = document.getElementById('jd-text');
-  const statusDiv = document.getElementById('status');
   const submitButton = document.getElementById('submit-button');
-  const savedResumeInfo = document.getElementById('saved-resume-info');
-  const clearResumeLink = document.getElementById('clear-resume');
+  const downloadButton = document.getElementById('download-button');
+  const restartButton = document.getElementById('restart-button');
 
-  let savedResumeBlob = null; // Will hold the Blob if loaded from storage
-  let isAutoRunning = false;
+  let savedResumeBlob = null;
+  let lastApiResponse = null;
+
+  // View Controller
+  function showView(viewId) {
+    [setupView, analyzingView, insightsView].forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    errorBar.style.display = 'none';
+  }
+
+  function showError(msg) {
+    errorBar.style.display = 'flex';
+    errorText.textContent = msg;
+    showView('setup-view');
+  }
+
+  // File Upload Handling
+  fileDropCard.addEventListener('click', () => resumeFileInput.click());
+  resumeFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      const file = e.target.files[0];
+      updateResumeStatus(file.name);
+      savedResumeBlob = null; // User manually uploaded, clear blob reference
+    }
+  });
+
+  function updateResumeStatus(name) {
+    fileDropCard.innerHTML = `<span>File: <strong>${name}</strong></span><p style="font-size:0.75rem">Click to change</p>`;
+    fileDropCard.style.borderColor = 'var(--success)';
+  }
 
   // Helper: Convert File to Base64
   function fileToBase64(file) {
@@ -27,181 +65,128 @@ document.addEventListener('DOMContentLoaded', function() {
     return await res.blob();
   }
 
-  // 1. Load Saved Data & Initialize
-  // ==========================================================
+  // 1. Initial Load
   chrome.storage.local.get(['apiKey', 'savedResume'], async function(result) {
-    if (result.apiKey) {
-      apiKeyInput.value = result.apiKey;
-    }
+    if (result.apiKey) apiKeyInput.value = result.apiKey;
 
     if (result.savedResume) {
       try {
         savedResumeBlob = await base64ToBlob(result.savedResume);
-        // Update UI to show saved resume state
-        resumeFileInput.style.display = 'none';
-        savedResumeInfo.style.display = 'block';
-        resumeFileInput.removeAttribute('required'); // Not required if we have one
-        
-        // If we have API key and Resume, try to auto-run
-        if (result.apiKey) {
-            detectJDAndAutoRun();
-        } else {
-            detectJDOnly(); // Just get JD, don't run
-        }
+        updateResumeStatus("Saved PDF Resume");
+        detectJD();
       } catch (e) {
         console.error("Error loading saved resume:", e);
-        chrome.storage.local.remove('savedResume'); // Clear corrupted data
+        chrome.storage.local.remove('savedResume');
       }
     } else {
-        detectJDOnly();
+      detectJD();
     }
   });
 
-  // Clear Saved Resume Handler
-  clearResumeLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    chrome.storage.local.remove('savedResume', function() {
-      savedResumeBlob = null;
-      resumeFileInput.style.display = 'block';
-      savedResumeInfo.style.display = 'none';
-      resumeFileInput.value = ''; // Clear file input
-      resumeFileInput.setAttribute('required', 'true');
-      statusDiv.textContent = "Saved resume cleared.";
-      statusDiv.style.color = "blue";
-    });
-  });
-
-  // Function to detect JD only (no auto-run)
-  function detectJDOnly() {
-      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        if (!tabs[0]) return;
-        chrome.scripting.executeScript({
-            target: { tabId: tabs[0].id },
-            files: ['content.js']
-        }, () => {
-            chrome.tabs.sendMessage(tabs[0].id, { message: "get_jd" }, function(response) {
-                if (!chrome.runtime.lastError && response && response.jd) {
-                    jdTextInput.value = response.jd;
-                }
-            });
-        });
-      });
-  }
-
-  // Function to detect JD and Auto-Run
-  function detectJDAndAutoRun() {
-    statusDiv.textContent = "Auto-detecting JD...";
-    statusDiv.style.color = "blue";
-
+  function detectJD() {
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
       if (!tabs[0]) return;
-
       chrome.scripting.executeScript({
         target: { tabId: tabs[0].id },
         files: ['content.js']
       }, () => {
         chrome.tabs.sendMessage(tabs[0].id, { message: "get_jd" }, function(response) {
-          if (chrome.runtime.lastError) {
-            console.log(chrome.runtime.lastError.message);
-            statusDiv.textContent = "Could not access page content.";
-            return;
-          }
-
-          if (response && response.jd && response.jd.trim().length > 50) {
+          if (!chrome.runtime.lastError && response && response.jd) {
             jdTextInput.value = response.jd;
-            statusDiv.textContent = "JD Detected! Auto-generating resume...";
-            statusDiv.style.color = "blue";
-            isAutoRunning = true;
-            submitForm(); // Trigger submission automatically
-          } else {
-            statusDiv.textContent = "Could not detect a valid JD automatically.";
-            statusDiv.style.color = "orange";
           }
         });
       });
     });
   }
 
-
-  // 2. Handle Form Submission
-  // ==========================================================
-  function submitForm() {
+  // 2. Submit Handler
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
     const apiKey = apiKeyInput.value.trim();
     const jdText = jdTextInput.value.trim();
-    let resumeFile = null;
+    let resumeFile = savedResumeBlob;
 
-    if (savedResumeBlob) {
-        resumeFile = savedResumeBlob;
-    } else if (resumeFileInput.files.length > 0) {
-        resumeFile = resumeFileInput.files[0];
+    if (resumeFileInput.files.length > 0) {
+      resumeFile = resumeFileInput.files[0];
     }
 
     if (!apiKey || !resumeFile || !jdText) {
-      statusDiv.textContent = 'Please fill in all fields (API Key, Resume, JD).';
-      statusDiv.style.color = 'red';
+      showError("Please fill in all requirements.");
       return;
     }
 
-    // Save API key
-    chrome.storage.local.set({ apiKey: apiKey });
+    showView('analyzing-view');
+    statusText.textContent = "Step 1/3: Extracting Resume Text...";
 
-    // Save Resume if it was a new upload
-    if (!savedResumeBlob && resumeFileInput.files.length > 0) {
-        fileToBase64(resumeFileInput.files[0]).then(base64 => {
-            chrome.storage.local.set({ savedResume: base64 });
-        }).catch(err => console.error("Error saving resume:", err));
+    // Save Data
+    chrome.storage.local.set({ apiKey: apiKey });
+    if (resumeFileInput.files.length > 0) {
+      const b64 = await fileToBase64(resumeFileInput.files[0]);
+      chrome.storage.local.set({ savedResume: b64 });
     }
 
-    // 3. Call the Backend API
-    // ==========================================================
+    // Call API
     const formData = new FormData();
     formData.append('api_key', apiKey);
     formData.append('jd_text', jdText);
-    // Append the file (Blob or File object) with a filename
-    formData.append('resume_file', resumeFile, "resume.pdf"); 
+    formData.append('resume_file', resumeFile, "resume.pdf");
 
-    statusDiv.textContent = 'Processing... This may take a moment.';
-    statusDiv.style.color = 'black';
-    submitButton.disabled = true;
+    setTimeout(() => { statusText.textContent = "Step 2/3: AI is analyzing gaps..."; }, 2000);
+    setTimeout(() => { statusText.textContent = "Step 3/3: Re-writing and Compiling PDF..."; }, 10000);
 
-    fetch('http://127.0.0.1:8000/tailor/', {
-      method: 'POST',
-      body: formData,
-    })
-    .then(response => {
-      if (response.ok) {
-        return response.blob(); 
-      } else {
-        return response.json().then(errorData => {
-          throw new Error(errorData.detail || 'An unknown error occurred.');
-        });
+    try {
+      const response = await fetch('http://127.0.0.1:8000/tailor/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorMsg = "API Failure";
+        try {
+            const errData = await response.json();
+            errorMsg = errData.detail || errData.message || JSON.stringify(errData);
+        } catch (e) {
+            errorMsg = `Server Error (${response.status})`;
+        }
+        throw new Error(errorMsg);
       }
-    })
-    .then(blob => {
-      // 4. Handle Success
-      statusDiv.textContent = 'Success! Your resume is downloading.';
-      statusDiv.style.color = 'green';
-      submitButton.disabled = false;
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = 'Optimized_Resume.docx'; // Update extension
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      statusDiv.textContent = `Error: ${error.message}`;
-      statusDiv.style.color = 'red';
-      submitButton.disabled = false;
-    });
+      const data = await response.json();
+      lastApiResponse = data;
+
+      // Render Insights
+      analysisContent.innerHTML = formatAnalysis(data.analysis);
+      showView('insights-view');
+
+    } catch (err) {
+      showError(err.message);
+    }
+  });
+
+  function formatAnalysis(text) {
+    // Simple markdown-ish formatting for keywords and bolding
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+               .replace(/\* (.*?)\n/g, '<span class="badge">$1</span> ')
+               .replace(/\n/g, '<br>');
   }
 
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    submitForm();
+  // 3. Action Handlers
+  downloadButton.addEventListener('click', () => {
+    if (!lastApiResponse || !lastApiResponse.pdf_base64) return;
+    
+    const base64Data = lastApiResponse.pdf_base64;
+    const binData = atob(base64Data);
+    const arr = new Uint8Array(binData.length);
+    for (let i = 0; i < binData.length; i++) arr[i] = binData.charCodeAt(i);
+    
+    const blob = new Blob([arr], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = lastApiResponse.filename || 'Optimized_Resume.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
   });
+
+  restartButton.addEventListener('click', () => showView('setup-view'));
 });
